@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-SCRIPTS_PATH="scripts/*"
+SCRIPTS_PATH="$(dirname $(readlink -f $0))/scripts/*"
 for script in $SCRIPTS_PATH
 do
     script_path=$(readlink -f $script)

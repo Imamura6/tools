@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+INPUT_FILE_PATH=$1
+OUT_PATH=$2
+if [[ ! -d $INPUT_FILE_PATH ]]
+then
+    echo "Directory $INPUT_FILE_PATH does not exists"
+    exit 1
+fi
+INPUT_FULL_PATH=$(readlink -f $INPUT_FILE_PATH)
+INPUT_BASENAME=$(basename $INPUT_FULL_PATH)
+TMP_OUT_FILE="/tmp/$INPUT_BASENAME.tar.gz"
+tar -zcf $TMP_OUT_FILE --exclude='*build*' --exclude='*bin*' -C $INPUT_FILE_PATH "../$INPUT_BASENAME"
+rsync -ahz --progress $TMP_OUT_FILE $OUT_PATH
+rm -rf $TMP_OUT_FILE

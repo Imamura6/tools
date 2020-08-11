@@ -1,0 +1,78 @@
+#!/bin/bash
+color="green"
+UUID=$(id -u)
+TEMP_PATH="/tmp/tmux-$UUID"
+window_divisions=1
+
+function setOptions()
+{
+    case $1 in
+        -g | --green)
+            color="green"
+            ;;
+        -r | --red)
+            color="red"
+            ;;
+        -b | --blue)
+            color="blue"
+            ;;
+        -m | --magenta)
+            color="magenta"
+            ;;
+        -y | --yellow)
+            color="yellow"
+            ;;
+        -1)
+            window_divisions=1
+            ;;
+        -2)
+            window_divisions=2
+            ;;
+        -3)
+            window_divisions=3
+            ;;
+        -4)
+            window_divisions=4
+            ;;
+    esac
+}
+
+function splitWindow()
+{
+    case $1 in
+        2)
+            tmux split-window -v $command
+            ;;
+        3)
+            tmux split-window -h $command
+            tmux split-window -v $command
+            ;;
+        4)
+            tmux split-window -h $command
+            tmux split-window -v $command
+            tmux select-pane -t 1
+            tmux split-window -v $command
+            ;;
+    esac
+}
+
+for string in $@; do
+    searchstring="-"
+    rest=${string#*$searchstring}
+    result=$(( ${#string} - ${#rest} - ${#searchstring} ))
+    if [ $result -eq 0 ]; then
+        setOptions $string
+    else
+        access=$string
+    fi
+done
+
+if [ -z "$access" ]; then
+    echo "ERR: access is null"
+else
+    command="ssh -x $access"
+    tmux new-window -n "$access" $command
+    splitWindow $window_divisions
+    touch "$TEMP_PATH/$access"
+    tmux set pane-active-border-style "bg=default fg=$color"
+fi

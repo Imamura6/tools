@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 INPUT_FILE_PATH=$1
 OUT_PATH=$2
@@ -8,8 +8,9 @@ then
     exit 1
 fi
 INPUT_FULL_PATH=$(readlink -f $INPUT_FILE_PATH)
+INPUT_PARENT_DIR="$(dirname $INPUT_FULL_PATH)"
 INPUT_BASENAME=$(basename $INPUT_FULL_PATH)
 TMP_OUT_FILE="/tmp/$INPUT_BASENAME.tar.gz"
-tar -zcf $TMP_OUT_FILE --exclude='*build' --exclude='*bin' -C $INPUT_FILE_PATH "../$INPUT_BASENAME"
+tar -zcf $TMP_OUT_FILE --exclude='*build' --exclude='*bin' -C $INPUT_PARENT_DIR "$INPUT_BASENAME"
 rsync -ahz --progress $TMP_OUT_FILE $OUT_PATH
 rm -rf $TMP_OUT_FILE

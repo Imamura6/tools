@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 SCRIPTS_PATH="$(dirname $(readlink -f $0))/scripts/*"
 for script in $SCRIPTS_PATH

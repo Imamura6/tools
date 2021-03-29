@@ -2,39 +2,25 @@
 color="green"
 UUID=$(id -u)
 TEMP_PATH="/tmp/tmux-$UUID"
-window_divisions=1
+panes=1
+servers=()
+ssh_options=()
 
-function setOptions()
+function printUsage()
 {
-    case $1 in
-        -g | --green)
-            color="green"
-            ;;
-        -r | --red)
-            color="red"
-            ;;
-        -b | --blue)
-            color="blue"
-            ;;
-        -m | --magenta)
-            color="magenta"
-            ;;
-        -y | --yellow)
-            color="yellow"
-            ;;
-        -1)
-            window_divisions=1
-            ;;
-        -2)
-            window_divisions=2
-            ;;
-        -3)
-            window_divisions=3
-            ;;
-        -4)
-            window_divisions=4
-            ;;
-    esac
+    echo "Usage: ssh-tmux [OPTION] destination"
+    echo "  -h, --help            Display this help and exit"
+    echo "  -g, --green           Set tmux terminal pane separator color to green"
+    echo "  -r, --red             Set tmux terminal pane separator color to red"
+    echo "  -b, --blue            Set tmux terminal pane separator color to blue"
+    echo "  -m, --magenta         Set tmux terminal pane separator color to magenta"
+    echo "  -y, --yellow          Set tmux terminal pane separator color to yellow"
+    echo "  -1                    Set new window to open 1 pane"
+    echo "  -2                    Set new window to open 2 panes"
+    echo "  -3                    Set new window to open 3 panes"
+    echo "  -4                    Set new window to open 4 panes"
+    echo "  -p=PORT               Port to connect to on the remote host"
+    echo "  -X                    Enables X11 forwarding"
 }
 
 function splitWindow()
@@ -56,23 +42,81 @@ function splitWindow()
     esac
 }
 
-for string in $@; do
-    searchstring="-"
-    rest=${string#*$searchstring}
-    result=$(( ${#string} - ${#rest} - ${#searchstring} ))
-    if [ $result -eq 0 ]; then
-        setOptions $string
-    else
-        access=$string
-    fi
+for option in "$@"
+do
+    case $option in
+        -h|--help)
+            printUsage
+            exit 0
+            ;;
+        -g | --green)
+            color="green"
+            shift
+            ;;
+        -r | --red)
+            color="red"
+            shift
+            ;;
+        -b | --blue)
+            color="blue"
+            shift
+            ;;
+        -m | --magenta)
+            color="magenta"
+            shift
+            ;;
+        -y | --yellow)
+            color="yellow"
+            shift
+            ;;
+        -1)
+            panes=1
+            shift
+            ;;
+        -2)
+            panes=2
+            shift
+            ;;
+        -3)
+            panes=3
+            shift
+            ;;
+        -4)
+            panes=4
+            shift
+            ;;
+        -p=*)
+            ssh_options+=("-p ${option#*=}")
+            shift
+            ;;
+        -X)
+            ssh_options+=("-X")
+            shift
+            ;;
+        -*)
+            echo "Unknown option $option for script"
+            printUsage
+            exit 1
+            ;;
+        *)
+            servers+=("$1")
+            shift
+            ;;
+    esac
 done
 
-if [ -z "$access" ]; then
-    echo "ERR: access is null"
-else
-    command="ssh -x $access"
-    tmux new-window -n "$access" $command
-    splitWindow $window_divisions
-    touch "$TEMP_PATH/$access"
-    tmux set pane-active-border-style "bg=default fg=$color"
+if [ ${#servers[@]} -eq 0 ]
+then
+    echo "Server addr not defined"
+    printUsage
+    exit 1
 fi
+
+for server in ${servers[@]}
+do
+    command="ssh ${ssh_options[@]} $server"
+    tmux new-window -n "$server" $command
+    splitWindow $panes
+    touch "$TEMP_PATH/$server"
+    tmux set pane-active-border-style "bg=default fg=$color"
+done
